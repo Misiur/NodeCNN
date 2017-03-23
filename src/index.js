@@ -6,26 +6,70 @@ const spawn = require('child_process').spawn;
 
 process.stdin.resume();
 
-log('Spawning python process');
-const cp = spawn('src/test.py');
+const consts = {
+  ANALYZE: 'ANALYZE',
+  READY: 'READY'
+}
 
-cp.stdout.on('data', chunk => {
-  log(JSON.parse(chunk.toString('utf-8')));
-});
+async function createAnalyzer () {
+  const cp = await createCNNProcess();
+  return analyzeTextAddCP(cp);
+}
 
-cp.stdin.setEncoding('utf-8');
+async function createCNNProcess() {
+  return new Promise((resolve, reject) => {
+    log('Spawning python process');
+    const cp = spawn('src/test.py');
 
-let id = 0;
-const tick = setInterval(() => {
-  cp.stdin.write('Wot in tarnation\n');
-  JSON.stringify({
-    id,
-    job: 'analyze',
-    text: 'Siemens announced smart ovens and free pizza!'
+    cp.stdin.setEncoding('utf-8');
+
+    cp.on('exit', () => {
+      log('Python process died');
+      clearInterval(tick);
+    });
+
+    cp.promiseSolvers = [];
+
+    // register for incoming data
+    cp.stdout.on('data', chunk => {
+      let str = chunk.toString('utf-8');
+      if(str.indexOf(consts.READY) === 0) {
+        resolve();
+      } else if(str.indexOf(consts.ANALYZE) === 0) {
+        str = str.split(consts.ANALYZE)[1];
+        cp.promiseSolvers[msg.id](JSON.parse(str));
+      }
+    });
   });
-}, 1000);
+}
 
-cp.on('exit', () => {
-  log('IT died');
-  clearInterval(tick);
-});
+/**
+ * async function to analyze text
+ * @param text - text to analyze
+ * @return - promise
+*/
+const analyzeTextAddCP = (function (cp) {
+  let i = 0;
+
+  return async function analyzeText (text) {
+    const promise = new Promise((resolve, reject) => {
+      cp.promiseSolvers.push(resolve);
+    });
+
+    cp.stdin.write(JSON.stringify({ id: i, job: consts.ANALYZE, text }) + '\n');
+
+    i++;
+    return promise;
+  }
+})();
+
+module.exports = createAnalyzer;
+
+// another file
+(async function mockListenAndTrade() {
+  const analyzeText = await createAnalyzer();
+  setInterval(async () => {
+    const response = await analyzeText('Siemens announced smart ovens and free pizza!');
+    console.log('response received: ', response);
+  }, 1000);
+})();
