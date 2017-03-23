@@ -19,7 +19,9 @@ async function createAnalyzer () {
 async function createCNNProcess() {
   return new Promise((resolve, reject) => {
     log('Spawning python process');
-    const cp = spawn('python', ['cnn-text-classification-tf/eval.py', 'someOptions']);
+    const cp = spawn('python', ['eval.py', 'someOptions'], {
+      cwd: './cnn-text-classification-tf'
+    });
 
     cp.stdin.setEncoding('utf-8');
 
@@ -33,8 +35,10 @@ async function createCNNProcess() {
     cp.stdout.on('data', chunk => {
       let str = chunk.toString('utf-8');
       if(str.indexOf(consts.READY) === 0) {
-        resolve();
+        log('READY received');
+        resolve(cp);
       } else if(str.indexOf(consts.ANALYZE) === 0) {
+        log('ANALYZE received');
         str = str.split(consts.ANALYZE)[1];
         cp.promiseSolvers[msg.id](JSON.parse(str));
       } else {
@@ -51,7 +55,7 @@ async function createCNNProcess() {
  * @param text - text to analyze
  * @return - promise
 */
-const analyzeTextAddCP = (function (cp) {
+const analyzeTextAddCP = function (cp) {
   let i = 0;
 
   return async function analyzeText (text) {
@@ -64,7 +68,7 @@ const analyzeTextAddCP = (function (cp) {
     i++;
     return promise;
   }
-})();
+};
 
 module.exports = createAnalyzer;
 
