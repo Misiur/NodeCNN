@@ -40,7 +40,8 @@ async function createCNNProcess() {
       } else if(str.indexOf(consts.ANALYZE) === 0) {
         log('ANALYZE received');
         str = str.split(consts.ANALYZE)[1];
-        cp.promiseSolvers[msg.id](JSON.parse(str));
+        const data = JSON.parse(str);
+        cp.promiseSolvers[data.id](data);
       } else {
         log(str);
       }
