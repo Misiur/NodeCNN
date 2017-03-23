@@ -19,13 +19,12 @@ async function createAnalyzer () {
 async function createCNNProcess() {
   return new Promise((resolve, reject) => {
     log('Spawning python process');
-    const cp = spawn('src/test.py');
+    const cp = spawn('python', ['cnn-text-classification-tf/eval.py', 'someOptions']);
 
     cp.stdin.setEncoding('utf-8');
 
     cp.on('exit', () => {
       log('Python process died');
-      clearInterval(tick);
     });
 
     cp.promiseSolvers = [];
@@ -38,8 +37,12 @@ async function createCNNProcess() {
       } else if(str.indexOf(consts.ANALYZE) === 0) {
         str = str.split(consts.ANALYZE)[1];
         cp.promiseSolvers[msg.id](JSON.parse(str));
+      } else {
+        log(str);
       }
     });
+
+    cp.stderr.on('data', chunk => log(chunk.toString('utf-8')));
   });
 }
 
