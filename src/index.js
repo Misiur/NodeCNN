@@ -10,17 +10,22 @@ log('Spawning python process');
 const cp = spawn('src/test.py');
 
 cp.stdout.on('data', chunk => {
-    const text = chunk.toString('utf-8');
-    log(text);
+  log(JSON.parse(chunk.toString('utf-8')));
 });
 
 cp.stdin.setEncoding('utf-8');
 
+let id = 0;
 const tick = setInterval(() => {
-    cp.stdin.write("Wot in tarnation\n");
+  cp.stdin.write('Wot in tarnation\n');
+  JSON.stringify({
+    id,
+    job: 'analyze',
+    text: 'Siemens announced smart ovens and free pizza!'
+  });
 }, 1000);
 
 cp.on('exit', () => {
-    log("IT died");
-    clearInterval(tick);
+  log('IT died');
+  clearInterval(tick);
 });
