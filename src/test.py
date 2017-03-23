@@ -1,14 +1,15 @@
 #!/usr/bin/python
 import sys
-eaprint("Python start")
+
+print("Python start")
 sys.stdout.flush()
 
-i = 0
-for line in sys.stdin.readline():
+while True:
+    line = sys.stdin.readline()
+    if not line:
+        continue
+
     print(line)
     sys.stdout.flush()
-    i += 1
-    if i > 2:
-        break
 
 print("python end")
