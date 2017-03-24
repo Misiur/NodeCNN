@@ -4,8 +4,6 @@ const spawn = require('child_process').spawn;
 // const argv = require('minimist')(process.argv.slice(2));
 // console.dir(argv);
 
-process.stdin.resume();
-
 const consts = {
   ANALYZE: 'ANALYZE',
   READY: 'READY'
@@ -38,8 +36,8 @@ async function createCNNProcess() {
         log('READY received');
         resolve(cp);
       } else if(str.indexOf(consts.ANALYZE) === 0) {
-        log('ANALYZE received');
-        str = str.split(consts.ANALYZE)[1];
+        log('ANALYZE received', str);
+        str = str.split(consts.ANALYZE)[1].split('\n')[0];
         const data = JSON.parse(str);
         cp.promiseSolvers[data.id](data);
       } else {
@@ -72,12 +70,3 @@ const analyzeTextAddCP = function (cp) {
 };
 
 module.exports = createAnalyzer;
-
-// another file
-(async function mockListenAndTrade() {
-  const analyzeText = await createAnalyzer();
-  setInterval(async () => {
-    const response = await analyzeText('Siemens announced smart ovens and free pizza!');
-    console.log('response received: ', response);
-  }, 1000);
-})();
