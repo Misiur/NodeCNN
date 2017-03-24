@@ -1,9 +1,6 @@
 const log = require('debug')('app:main');
 const spawn = require('child_process').spawn;
 
-// const argv = require('minimist')(process.argv.slice(2));
-// console.dir(argv);
-
 const consts = {
   ANALYZE: 'ANALYZE',
   READY: 'READY'
@@ -18,7 +15,7 @@ async function createCNNProcess() {
   return new Promise((resolve, reject) => {
     log('Spawning python process');
     const cp = spawn('python', ['eval.py', 'someOptions'], {
-      cwd: './cnn-text-classification-tf'
+      cwd: __dirname + '/cnn-text-classification-tf'
     });
 
     cp.stdin.setEncoding('utf-8');
@@ -32,17 +29,21 @@ async function createCNNProcess() {
     // register for incoming data
     cp.stdout.on('data', chunk => {
       let str = chunk.toString('utf-8');
-      if(str.indexOf(consts.READY) === 0) {
-        log('READY received');
-        resolve(cp);
-      } else if(str.indexOf(consts.ANALYZE) === 0) {
-        log('ANALYZE received', str);
-        str = str.split(consts.ANALYZE)[1].split('\n')[0];
-        const data = JSON.parse(str);
-        cp.promiseSolvers[data.id](data);
-      } else {
-        log(str);
-      }
+
+      str.split('\n').map(str => {
+        if(str.indexOf(consts.READY) === 0) {
+          log('READY received');
+          resolve(cp);
+          return false;
+        } else if(str.indexOf(consts.ANALYZE) === 0) {
+          str = str.split(consts.ANALYZE)[1].split('\n')[0];
+          const data = JSON.parse(str);
+          cp.promiseSolvers[data.id](data);
+          return false;
+        } else {
+          log(str);
+        }
+      });
     });
 
     cp.stderr.on('data', chunk => log(chunk.toString('utf-8')));
