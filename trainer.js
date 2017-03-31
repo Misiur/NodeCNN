@@ -13,21 +13,8 @@ const COMMANDS = {
 function train(data) {
   const cp = createTrainingProcess();
   waitForProcessReady(cp)
-  .then(() => sendTrainingData(cp, [
-    ['A long sentence makes Jack a dull boy', 1],
-    ['A long sentence makes Jack a dull boy', 1],
-    ['A long sentence makes Jack a dull boy', 1],
-    ['A long sentence makes Jack a dull boy', 1],
-    ['A long sentence makes Jack a dull boy', 1],
-    ['Jack was already dull and numb', 0],
-    ['Jack was already dull and numb', 0],
-    ['Jack was already dull and numb', 0],
-    ['Jack was already dull and numb', 0],
-    ['Jack was already dull and numb', 0],
-  ]))
-  .then(() => {
-    log('Data sent');
-  });
+  .then(() => sendTrainingData(cp, data))
+  .then(() => log('Data sent'));
 }
 
 function sendTrainingData(cp, data) {
@@ -77,5 +64,4 @@ function createTrainingProcess() {
   return cp;
 }
 
-train();
-// module.exports = train;
+module.exports = train;
