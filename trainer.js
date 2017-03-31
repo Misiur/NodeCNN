@@ -1,5 +1,6 @@
 const log = require('debug')('app:training');
 const spawn = require('child_process').spawn;
+const EOL = require('os').EOL;
 
 const COMMANDS = {
   READY: 'READY',
@@ -11,6 +12,10 @@ const COMMANDS = {
 // [['A sentence with something', 1], ['Or not so good sentence', 0]]
 
 function train(data) {
+  if (typeof data === 'undefined') {
+    throw 'Input data is required';
+  }
+
   const cp = createTrainingProcess();
   waitForProcessReady(cp)
   .then(() => sendTrainingData(cp, data))
@@ -36,7 +41,7 @@ function sendTrainingData(cp, data) {
 function waitForProcessReady(cp) {
   return new Promise((resolve, reject) => {
     function listen(chunk) {
-      chunk.toString('utf-8').split('\n').forEach((item) => {
+      chunk.toString('utf-8').split(EOL).forEach((item) => {
         if(item === COMMANDS.READY) {
           log('Train ready for input');
           cp.stdout.removeListener('data', listen);
