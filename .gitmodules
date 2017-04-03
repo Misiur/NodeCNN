@@ -1,3 +1,0 @@
-[submodule "cnn-text-classification-tf"]
-	path = cnn-text-classification-tf
-	url = https://github.com/DVLP/cnn-text-classification-tf
