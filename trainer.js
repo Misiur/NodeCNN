@@ -5,7 +5,8 @@ const EOL = require('os').EOL;
 const COMMANDS = {
   READY: 'READY',
   DATA: 'DATA',
-  END_DATA: 'END_DATA'
+  END_DATA: 'END_DATA',
+  END_TRAIN: 'END_TRAIN'
 };
 
 // Data expected format:
@@ -17,9 +18,13 @@ function train(data) {
   }
 
   const cp = createTrainingProcess();
-  waitForProcessReady(cp)
-  .then(() => sendTrainingData(cp, data))
-  .then(() => log('Data sent'));
+  
+  return waitForProcessReady(cp)
+  .then(() => {
+    sendTrainingData(cp, data);
+    log('Data sent');
+    return waitForFinish(cp);
+  });
 }
 
 function sendTrainingData(cp, data) {
@@ -35,6 +40,20 @@ function sendTrainingData(cp, data) {
 
   cp.stdout.on('data', (chunk) => {
     log(chunk.toString('utf-8'));
+  });
+}
+
+function waitForFinish(cp) {
+  return new Promise((resolve, reject) => {
+    cp.stdout.on('data', chunk => {
+      chunk.toString('utf-8').split(EOL).map(str => {
+        if(str.indexOf(COMMANDS.END_TRAIN) === 0) {
+          log('End train received');
+          resolve(cp);
+          return false;
+        }
+      });
+    });
   });
 }
 

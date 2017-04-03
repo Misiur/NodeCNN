@@ -1,5 +1,6 @@
 const log = require('debug')('app:main');
 const spawn = require('child_process').spawn;
+const EOL = require('os').EOL;
 
 const consts = {
   ANALYZE: 'ANALYZE',
@@ -30,7 +31,7 @@ async function createCNNProcess() {
     cp.stdout.on('data', chunk => {
       let str = chunk.toString('utf-8');
 
-      str.split('\n').map(str => {
+      str.split(EOL).map(str => {
         if(str.indexOf(consts.READY) === 0) {
           log('READY received');
           resolve(cp);
