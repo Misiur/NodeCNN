@@ -198,25 +198,25 @@ with tf.Graph().as_default():
         if not os.path.exists(checkpoint_dir):
             os.makedirs(checkpoint_dir)
 
-        if restore is False:        
+        if restore is False:
             saver = tf.train.Saver(tf.global_variables(), max_to_keep=FLAGS.num_checkpoints)
 
         # Write vocabulary
         vocab_processor.save(os.path.join(out_dir, "vocab"))
 
         # Initialize all variables
-        # if restore is False:
-        sess.run(tf.global_variables_initializer())
+        if restore is False:
+            sess.run(tf.global_variables_initializer())
 
         vocabulary = vocab_processor.vocabulary_
         # load embedding vectors from the word2vec
-        stream("Load word2vec file {}".format(word2vec_path))
-        initW = data_helpers.load_embedding_vectors_word2vec(vocabulary,
-                                                             word2vec_path,
-                                                             True)
-        stream("Running w2v")
-        sess.run(cnn.W.assign(initW))
-        stream("Finished w2v")
+        # stream("Load word2vec file {}".format(word2vec_path))
+        # initW = data_helpers.load_embedding_vectors_word2vec(vocabulary,
+        #                                                      word2vec_path,
+        #                                                      True)
+        # stream("Running w2v")
+        # sess.run(cnn.W.assign(initW))
+        # stream("Finished w2v")
 
         def train_step(x_batch, y_batch):
             """
