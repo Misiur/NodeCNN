@@ -17,6 +17,9 @@ def stream(str):
     sys.stdout.flush()
 
 
+restore = True
+checkpoint_dir = "./runs/timestamp/checkpoints"
+
 datasets = dict()
 datasets['data'] = []
 datasets['target'] = []
@@ -132,7 +135,15 @@ with tf.Graph().as_default():
       log_device_placement=FLAGS.log_device_placement)
     sess = tf.Session(config=session_conf)
     with sess.as_default():
+        if restore is True:
+            stream("RESTORING")
+            checkpoint_file = tf.train.latest_checkpoint(checkpoint_dir)
+
+            saver = tf.train.import_meta_graph("{}.meta".format(checkpoint_file), clear_devices=True)
+            saver.restore(sess, checkpoint_file)
+
         cnn = TextCNN(
+            restore=restore,
             sequence_length=x_train.shape[1],
             num_classes=y_train.shape[1],
             vocab_size=len(vocab_processor.vocabulary_),
@@ -141,11 +152,16 @@ with tf.Graph().as_default():
             num_filters=FLAGS.num_filters,
             l2_reg_lambda=FLAGS.l2_reg_lambda)
 
-        # Define Training procedure
-        global_step = tf.Variable(0, name="global_step", trainable=False)
         optimizer = tf.train.AdamOptimizer(1e-3)
         grads_and_vars = optimizer.compute_gradients(cnn.loss)
-        train_op = optimizer.apply_gradients(grads_and_vars, global_step=global_step)
+
+        if restore is True:
+            global_step = tf.get_default_graph().get_tensor_by_name('global_step:0')
+            train_op = tf.get_collection('train_op')[0]
+        else:
+            stream("INITIALIZING")
+            global_step = tf.Variable(0, name="global_step", trainable=False)
+            train_op = optimizer.apply_gradients(grads_and_vars, global_step=global_step)
 
         # Keep track of gradient values and sparsity (optional)
         grad_summaries = []
@@ -181,12 +197,15 @@ with tf.Graph().as_default():
         checkpoint_prefix = os.path.join(checkpoint_dir, "model")
         if not os.path.exists(checkpoint_dir):
             os.makedirs(checkpoint_dir)
-        saver = tf.train.Saver(tf.global_variables(), max_to_keep=FLAGS.num_checkpoints)
+
+        if restore is False:        
+            saver = tf.train.Saver(tf.global_variables(), max_to_keep=FLAGS.num_checkpoints)
 
         # Write vocabulary
         vocab_processor.save(os.path.join(out_dir, "vocab"))
 
         # Initialize all variables
+        # if restore is False:
         sess.run(tf.global_variables_initializer())
 
         vocabulary = vocab_processor.vocabulary_

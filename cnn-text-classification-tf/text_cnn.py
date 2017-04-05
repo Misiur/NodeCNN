@@ -8,13 +8,18 @@ class TextCNN(object):
     Uses an embedding layer, followed by a convolutional, max-pooling and softmax layer.
     """
     def __init__(
-      self, sequence_length, num_classes, vocab_size,
+      self, restore, sequence_length, num_classes, vocab_size,
       embedding_size, filter_sizes, num_filters, l2_reg_lambda=0.0):
 
         # Placeholders for input, output and dropout
-        self.input_x = tf.placeholder(tf.int32, [None, sequence_length], name="input_x")
-        self.input_y = tf.placeholder(tf.float32, [None, num_classes], name="input_y")
-        self.dropout_keep_prob = tf.placeholder(tf.float32, name="dropout_keep_prob")
+        if restore is True:
+            self.input_x = tf.get_default_graph().get_tensor_by_name('input_x:0')
+            self.input_y = tf.get_default_graph().get_tensor_by_name('input_y:0')
+            self.dropout_keep_prob = tf.get_default_graph().get_tensor_by_name('dropout_keep_prob:0')
+        else:
+            self.input_x = tf.placeholder(tf.int32, [None, sequence_length], name="input_x")
+            self.input_y = tf.placeholder(tf.float32, [None, num_classes], name="input_y")
+            self.dropout_keep_prob = tf.placeholder(tf.float32, name="dropout_keep_prob")
 
         # Keeping track of l2 regularization loss (optional)
         l2_loss = tf.constant(0.0)
