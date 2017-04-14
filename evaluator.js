@@ -1,11 +1,15 @@
 const log = require('debug')('app:evaluator');
 const spawn = require('child_process').spawn;
 const EOL = require('os').EOL;
+const path = require('path');
+const { escapePythonMessage } = require('./utils.js');
+
+const ABS_MAX_FEATURE = 10;
 
 const consts = {
   ANALYZE: 'ANALYZE',
-  READY: 'READY'
-}
+  READY: 'READY',
+};
 
 class Evaluator {
   constructor() {
@@ -27,7 +31,7 @@ class Evaluator {
     return new Promise((resolve, reject) => {
       log('Spawning python process');
       const cp = spawn('python', ['eval.py', 'someOptions'], {
-        cwd: __dirname + '/cnn-text-classification-tf'
+        cwd: path.join(__dirname, 'cnn-text-classification-tf'),
       });
 
       cp.stdin.setEncoding('utf-8');
@@ -39,20 +43,17 @@ class Evaluator {
       cp.promiseSolvers = [];
 
       // register for incoming data
-      cp.stdout.on('data', chunk => {
-        let str = chunk.toString('utf-8');
+      cp.stdout.on('data', chunk => chunk.toString('utf-8').split(EOL).forEach((str) => {
+        if (str.indexOf(consts.READY) === 0) {
+          log('READY received');
+          this.status = this.STATUS.READY;
+          resolve(cp);
+        } else {
+          log(str);
+        }
 
-        str.split(EOL).forEach(str => {
-          if(str.indexOf(consts.READY) === 0) {
-            log('READY received');
-            this.status = this.STATUS.READY;
-            resolve(cp);
-            return false;
-          } else {
-            log(str);
-          }
-        });
-      });
+        return false;
+      }));
 
       cp.stderr.on('data', chunk => log(chunk.toString('utf-8')));
     });
@@ -65,26 +66,26 @@ class Evaluator {
   }
 
   async analyze(text) {
-    if(this.status !== this.STATUS.READY) {
+    if (this.status !== this.STATUS.READY) {
       throw new Error(`Tried to call analyze when state is not ready (${this.status})`);
     }
 
     return new Promise((resolve, reject) => {
-      const awaitAnalyzeResponse = (chunk) => {
-        let str = chunk.toString('utf-8');
-        str.split(EOL).forEach(str => {
-          if(str.indexOf(consts.ANALYZE) === 0) {
-            str = str.split(consts.ANALYZE)[1].split(EOL)[0];
-            this.cp.stdout.removeListener('data', awaitAnalyzeResponse);
-            resolve(JSON.parse(str));
-            return false;
-          }
-        });
-      };
+      const awaitAnalyzeResponse = chunk => chunk.toString('utf-8').split(EOL).forEach((str) => {
+        if (str.indexOf(consts.ANALYZE) === 0) {
+          const messages = str.split(consts.ANALYZE)[1].split(EOL)[0];
+          this.cp.stdout.removeListener('data', awaitAnalyzeResponse);
+          const data = JSON.parse(messages);
+          data.sentiment -= ABS_MAX_FEATURE;
+          resolve(data);
+        }
+
+        return false;
+      });
 
       this.cp.stdout.on('data', awaitAnalyzeResponse);
 
-      this.cp.stdin.write(JSON.stringify({ id: this.messageId++, job: consts.ANALYZE, text }) + '\n');
+      this.cp.stdin.write(`${JSON.stringify({ id: this.messageId++, job: consts.ANALYZE, text: escapePythonMessage(text) })}\n`);
     });
   }
 }
