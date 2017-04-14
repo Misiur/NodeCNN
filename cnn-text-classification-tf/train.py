@@ -17,13 +17,14 @@ def stream(str):
     sys.stdout.flush()
 
 
-restore = True
+restore = False
 checkpoint_dir = "./runs/timestamp/checkpoints"
 
 datasets = dict()
 datasets['data'] = []
 datasets['target'] = []
-datasets['target_names'] = ['positive_examples', 'negative_examples']
+abs_max_feature = 10
+datasets['target_names'] = ["feature_score_{}".format(x + abs_max_feature) for x in range(-abs_max_feature, abs_max_feature + 1)]
 
 
 def decodeData(data):
