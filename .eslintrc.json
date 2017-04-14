@@ -1,0 +1,21 @@
+{
+    "env": {
+        "es6": true,
+        "node": true
+    },
+    "extends": "airbnb",
+    "parserOptions": {
+        "ecmaVersion": 8, // or 2017
+        "ecmaFeatures": {
+            "experimentalObjectRestSpread": true
+        }
+    },
+    "rules": {
+        "linebreak-style": [
+            "error",
+            "unix"
+        ],
+        "no-use-before-define": [2, { "functions": false }], // function hoisting allowed
+        "no-plusplus": 0
+    }
+}
