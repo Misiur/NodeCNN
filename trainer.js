@@ -40,7 +40,7 @@ function extractFeatures(data) {
     range = Math.max(-ABS_MAX_FEATURE, range);
     range += ABS_MAX_FEATURE;
 
-    return [el[0], range];
+    return [escapePythonMessage(el[0]), range];
   });
 }
 
@@ -50,7 +50,7 @@ function sendTrainingData(cp, data) {
   const dataWithFeatures = extractFeatures(data);
 
   write(COMMANDS.DATA);
-  dataWithFeatures.forEach(bit => write(JSON.stringify(escapePythonMessage(bit))));
+  dataWithFeatures.forEach(bit => write(JSON.stringify(bit)));
   write(COMMANDS.END_DATA);
 
   cp.stdout.on('data', (chunk) => {

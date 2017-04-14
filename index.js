@@ -3,5 +3,5 @@ const trainer = require('./trainer.js');
 
 module.exports = {
   Evaluator,
-  trainer
+  trainer,
 };
