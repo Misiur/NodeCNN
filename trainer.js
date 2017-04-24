@@ -9,22 +9,35 @@ const ABS_MAX_FEATURE = 10;
 const COMMANDS = {
   READY: 'READY',
   DATA: 'DATA',
+  SETTINGS: 'SETTINGS',
+  END_SETTINGS: 'END_SETTINGS',
   END_DATA: 'END_DATA',
   END_TRAIN: 'END_TRAIN',
+};
+
+const TRAINING_MODE = {
+  FRESH: 'FRESH',
+  RETRAIN: 'RETRAIN',
 };
 
 // Data expected format:
 // [['A sentence with something', 1], ['Or not so good sentence', 0]]
 
-function train(data) {
+function train(data, mode) {
   if (typeof data === 'undefined') {
     throw new Error('Input data is required');
+  }
+
+  if (typeof mode === 'undefined') {
+    mode = TRAINING_MODE.FRESH;
   }
 
   const cp = createTrainingProcess();
 
   return waitForProcessReady(cp)
   .then(() => {
+    sendSettingsData(cp, { mode });
+    log('Settings sent');
     sendTrainingData(cp, data);
     log('Data sent');
     return waitForFinish(cp);
@@ -56,6 +69,14 @@ function sendTrainingData(cp, data) {
   cp.stdout.on('data', (chunk) => {
     log(chunk.toString('utf-8'));
   });
+}
+
+function sendSettingsData(cp, data) {
+  const write = str => cp.stdin.write(`${str}\n`);
+
+  write(COMMANDS.SETTINGS);
+  write(JSON.stringify(data));
+  write(COMMANDS.END_SETTINGS);
 }
 
 function waitForFinish(cp) {
@@ -102,4 +123,7 @@ function createTrainingProcess() {
   return cp;
 }
 
-module.exports = train;
+module.exports = {
+  train,
+  TRAINING_MODE,
+};
