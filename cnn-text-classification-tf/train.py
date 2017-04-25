@@ -17,13 +17,21 @@ def stream(str):
     sys.stdout.flush()
 
 
-restore = True
+restore = False
 checkpoint_dir = "./runs/timestamp/checkpoints"
 
 datasets = dict()
 datasets['data'] = []
 datasets['target'] = []
-datasets['target_names'] = ['positive_examples', 'negative_examples']
+abs_max_feature = 10
+datasets['target_names'] = ["feature_score_{}".format(x + abs_max_feature) for x in range(-abs_max_feature, abs_max_feature + 1)]
+
+
+def decodeSettings(data):
+    global restore
+    json_data = json.loads(data)
+    restore = json_data['mode'] != 'FRESH'
+    stream("Restore is set to {}".format(restore))
 
 
 def decodeData(data):
@@ -37,21 +45,34 @@ def decodeData(data):
 stream("READY")
 
 capturing_data = False
+capturing_settings = False
 
 while True:
     line = sys.stdin.readline()
 
-    if not capturing_data:
+    if not capturing_data and not capturing_settings:
         if not line:
             pass
 
         if line.startswith('DATA'):
             stream("Capture started")
             capturing_data = True
+
+        if line.startswith('SETTINGS'):
+            stream("Settings started")
+            capturing_settings = True
+    elif capturing_settings:
+        if not line:
+            raise 'Empty line during captuing settings phase'
+
+        if line.startswith('END_SETTINGS'):
+            stream("Settings finished")
+            capturing_settings = False
+        else:
+            decodeSettings(line)
     else:
         if not line:
             raise 'Empty line during capturing phase'
-            pass
 
         if line.startswith('END_DATA'):
             stream("Capture finished")
