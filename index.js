@@ -5,4 +5,5 @@ module.exports = {
   Evaluator,
   trainer: trainer.train,
   TRAINING_MODE: trainer.TRAINING_MODE,
+  PRESET: trainer.PRESET,
 };

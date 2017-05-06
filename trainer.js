@@ -2,7 +2,7 @@ const log = require('debug')('app:training');
 const spawn = require('child_process').spawn;
 const EOL = require('os').EOL;
 const path = require('path');
-const { escapePythonMessage } = require('./utils.js');
+const { escapePythonMessage, decreaseVocabSize } = require('./utils.js');
 
 const ABS_MAX_FEATURE = 10;
 
@@ -20,10 +20,16 @@ const TRAINING_MODE = {
   RETRAIN: 'RETRAIN',
 };
 
+const PRESET = {
+  MINI: 'mini',
+  MEDIUM: 'medium',
+  LARGE: 'large',
+};
+
 // Data expected format:
 // [['A sentence with something', 1], ['Or not so good sentence', 0]]
 
-function train(data, mode) {
+function train(data, mode, preset) {
   if (typeof data === 'undefined') {
     throw new Error('Input data is required');
   }
@@ -32,11 +38,15 @@ function train(data, mode) {
     mode = TRAINING_MODE.FRESH;
   }
 
+  if (typeof preset === 'undefined') {
+    preset = PRESET.MINI;
+  }
+
   const cp = createTrainingProcess();
 
   return waitForProcessReady(cp)
   .then(() => {
-    sendSettingsData(cp, { mode });
+    sendSettingsData(cp, { mode, preset });
     log('Settings sent');
     sendTrainingData(cp, data);
     log('Data sent');
@@ -53,7 +63,7 @@ function extractFeatures(data) {
     range = Math.max(-ABS_MAX_FEATURE, range);
     range += ABS_MAX_FEATURE;
 
-    return [escapePythonMessage(el[0]), range];
+    return [el[0], range];
   });
 }
 
@@ -61,9 +71,10 @@ function sendTrainingData(cp, data) {
   const write = str => cp.stdin.write(`${str}\n`);
 
   const dataWithFeatures = extractFeatures(data);
+  const decreasedVocabSizeData = decreaseVocabSize(dataWithFeatures, 50000);
 
   write(COMMANDS.DATA);
-  dataWithFeatures.forEach(bit => write(JSON.stringify(bit)));
+  decreasedVocabSizeData.forEach(bit => write(JSON.stringify(bit)));
   write(COMMANDS.END_DATA);
 
   cp.stdout.on('data', (chunk) => {
@@ -126,4 +137,5 @@ function createTrainingProcess() {
 module.exports = {
   train,
   TRAINING_MODE,
+  PRESET,
 };

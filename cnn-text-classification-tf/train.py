@@ -17,6 +17,21 @@ def stream(str):
     sys.stdout.flush()
 
 
+presets = {
+    "mini": {
+        "dev_sample": 0.005
+    },
+    "medium": {
+        "dev_sample": 0.01
+    },
+    "large": {
+        "dev_sample": 0.1
+    }
+}
+
+default_preset = "mini"
+preset = None
+
 restore = False
 checkpoint_dir = "./runs/timestamp/checkpoints"
 
@@ -28,10 +43,13 @@ datasets['target_names'] = ["feature_score_{}".format(x + abs_max_feature) for x
 
 
 def decodeSettings(data):
-    global restore
+    global restore, preset
     json_data = json.loads(data)
     restore = json_data['mode'] != 'FRESH'
+    current_preset = json_data.get('preset', default_preset);
+    preset = presets[current_preset]
     stream("Restore is set to {}".format(restore))
+    stream("Preset is set to \"{}\"".format(current_preset))
 
 
 def decodeData(data):
@@ -89,7 +107,7 @@ x_text, y = data_helpers.load_data_labels(datasets)
 # ==================================================
 
 # Data loading params
-tf.flags.DEFINE_float("dev_sample_percentage", .1, "Percentage of the training data to use for validation")
+tf.flags.DEFINE_float("dev_sample_percentage", preset["dev_sample"], "Percentage of the training data to use for validation")
 tf.flags.DEFINE_string("positive_data_file", "./data/rt-polaritydata/rt-polarity.pos", "Data source for the positive data.")
 tf.flags.DEFINE_string("negative_data_file", "./data/rt-polaritydata/rt-polarity.neg", "Data source for the negative data.")
 
