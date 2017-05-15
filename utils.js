@@ -3,7 +3,7 @@ const stopword = require('stopword');
 const unescape = require('unescape');
 
 function clearSentence(sentence) {
-  return sentence.replace(/\n/g, '').replace(/ +/g, ' ').trim().toLowerCase();
+  return sentence.replace(/\n/g, ' ').replace(/ +/g, ' ').trim().toLowerCase();
 }
 
 function isolateTokens(sentence) {
@@ -133,4 +133,7 @@ module.exports = {
   createWordFrequencies,
   clearSentence,
   clearTwitterMeta,
+  unescape,
+  normalizeGlyphs,
+  clearLinks,
 };

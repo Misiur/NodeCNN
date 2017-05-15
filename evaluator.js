@@ -2,7 +2,7 @@ const log = require('debug')('app:evaluator');
 const spawn = require('child_process').spawn;
 const EOL = require('os').EOL;
 const path = require('path');
-const { escapePythonMessage } = require('./utils.js');
+const { clearSentence, unescape, clearLinks, normalizeGlyphs, clearTwitterMeta } = require('./utils.js');
 
 const ABS_MAX_FEATURE = 10;
 
@@ -37,6 +37,7 @@ class Evaluator {
       cp.stdin.setEncoding('utf-8');
 
       cp.on('exit', () => {
+        this.status = this.STATUS.STOPPED;
         log('Python process died');
       });
 
@@ -85,7 +86,8 @@ class Evaluator {
 
       this.cp.stdout.on('data', awaitAnalyzeResponse);
 
-      this.cp.stdin.write(`${JSON.stringify({ id: this.messageId++, job: consts.ANALYZE, text: escapePythonMessage(text) })}\n`);
+      const sentence = clearTwitterMeta(normalizeGlyphs(clearLinks(clearSentence(unescape(text)))));
+      this.cp.stdin.write(`${JSON.stringify({ id: this.messageId++, job: consts.ANALYZE, text: sentence })}\n`);
     });
   }
 }
